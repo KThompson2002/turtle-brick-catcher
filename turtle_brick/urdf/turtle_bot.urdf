@@ -22,13 +22,13 @@
   <link name="base_link">
     <visual>
       <geometry>
-        <box size="2 2 2"/>
+        <box size="2.0 2.0 2.0"/>
       </geometry>
       <material name="green"/>
     </visual>
     <collision>
       <geometry>
-        <box size="2 2 2"/>
+        <box size="2.0 2.0 2.0"/>
       </geometry>
     </collision>
   </link>
@@ -36,20 +36,20 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="2.5" radius="0.2"/>
+        <cylinder length="2.0" radius="0.2"/>
       </geometry>
       <material name="white"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="2.5" radius="0.2"/>
+        <cylinder length="2.0" radius="0.2"/>
       </geometry>
     </collision>
   </link>
   <link name="platform_link">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
       <geometry>
         <cylinder length="0.2" radius="2"/>
       </geometry>
@@ -64,16 +64,16 @@
   </link>
   <link name="stem_link">
     <visual>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.5"/>
       <geometry>
-        <cylinder length="-0.4" radius="0.5"/>
+        <cylinder length="1.0" radius="0.5"/>
       </geometry>
       <material name="orange"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <cylinder length="-0.4" radius="0.65"/>
+        <cylinder length="-1.0" radius="0.65"/>
       </geometry>
     </collision>
   </link>
@@ -93,29 +93,29 @@
     </collision>
   </link>
   <joint name="fixed_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 2.25"/>
+    <origin rpy="0 0 0" xyz="0 0 2.0"/>
     <parent link="base_link"/>
     <child link="fixed_link"/>
   </joint>
   <joint name="platform_joint" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0 1.25"/>
+    <origin rpy="0 0 0" xyz="0 0 1.0"/>
     <parent link="fixed_link"/>
     <child link="platform_link"/>
     <axis xyz="1 0 0"/>
-    <limit effort="100" velocity="100"/>
+    <limit effort="100" lower="0" upper="6.283185307179586" velocity="100"/>
   </joint>
   <joint name="stem_joint" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0 -1"/>
+    <origin rpy="0 0 0" xyz="0 0 -1.0"/>
     <parent link="base_link"/>
     <child link="stem_link"/>
     <axis xyz="0 0 1"/>
-    <limit effort="100" velocity="100"/>
+    <limit effort="100" lower="0" upper="6.283185307179586" velocity="100"/>
   </joint>
   <joint name="wheel_joint" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0 -2.2"/>
+    <origin rpy="0 0 0" xyz="0 0 -3.0"/>
     <parent link="stem_link"/>
     <child link="wheel_link"/>
     <axis xyz="1 0 0"/>
-    <limit effort="100" velocity="100"/>
+    <limit effort="100" lower="0" upper="6.283185307179586" velocity="100"/>
   </joint>
 </robot>

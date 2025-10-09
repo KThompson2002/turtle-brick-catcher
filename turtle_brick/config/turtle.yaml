@@ -1,0 +1,6 @@
+
+dimensions:
+  platform_height: 9
+  wheel_radius: 2
+  max_velocity: 100
+  gravity_accel: 10
