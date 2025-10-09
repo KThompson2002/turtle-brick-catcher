@@ -1,0 +1,117 @@
+<robot name="turtle-bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:include filename="materials.urdf.xacro"/>
+
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="2 2 2" />
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="2 2 2" />
+            </geometry>
+        </collision>
+    </link>
+
+    <xacro:property name="fixed_length" value="2.5" />
+    
+    <link name="fixed_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="${fixed_length}" radius="0.2"/>
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder length="${fixed_length}" radius="0.2" />
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="platform_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="0.2" radius="2"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder length="0.2" radius="2"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <xacro:property name="stem_length" value="0.4"/>
+    <link name="stem_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder length="${-stem_length}" radius="0.5"/>
+            </geometry>
+            <material name="orange"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder length="-0.4" radius="0.65"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <xacro:property name="wheel_radius" value="2"/>
+    <xacro:property name="wheel_length" value="0.5"/>
+    <link name="wheel_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+            <geometry>
+                <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="fixed_joint" type="fixed">
+        <origin xyz="0 0 ${fixed_length/2 + 1}" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="fixed_link"/>
+    </joint>
+
+    <joint name="platform_joint" type="revolute">
+        <origin xyz="0 0 ${fixed_length/2}" rpy="0 0 0"/>
+        <parent link="fixed_link"/>
+        <child link="platform_link"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="100" velocity="100"/>
+    </joint>
+
+    <joint name="stem_joint" type="revolute">
+        <origin xyz="0 0 -1" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="stem_link"/>
+        <axis xyz="0 0 1"/>
+        <limit effort="100" velocity="100"/>
+    </joint>
+
+    <joint name="wheel_joint" type="revolute">
+        <origin xyz="0 0 ${-wheel_radius-0.2}" rpy="0 0 0" />
+        <parent link="stem_link"/>
+        <child link="wheel_link"/>
+        <axis xyz="1 0 0"/>
+        <limit effort="100" velocity="100"/>
+    </joint>
+
+</robot>
