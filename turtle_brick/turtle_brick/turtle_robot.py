@@ -3,7 +3,7 @@ import rclpy
 import math
 
 from rclpy.node import Node
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+# from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 from turtlesim_msgs.msg import Pose
@@ -14,6 +14,8 @@ from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
+from transforms3d.quaternions import axangle2quat
+
 # Custom msg/srv
 from turtle_brick_interfaces.msg import Tilt
 
@@ -21,11 +23,29 @@ class State(Enum):
     """ Current state of the system.
         Determines what the main timer function should be doing on each iteration
     """
-    START = auto()
+    START = auto(),
     MOVING = auto(),
-    STOPPED = auto(),
+    STOPPED = auto()
 
-class TurtleRobot():
+
+def quatToMsg(quat):
+    """
+    Convert a four-element sequence to a geometry_msgs/msg/Quaternion.
+
+    Parameters
+    ----------
+    quat : list
+         A four element sequence [w, x, y, z] representing a quaternion
+
+    Returns
+    -------
+    geometry_msgs.msg.Quaternion
+         The corresponding Quaternion message
+
+    """
+    return Quaternion(w=quat[0], x=quat[1], y=quat[2], z=quat[3])
+
+class TurtleRobot(Node):
     def __init__(self):
         super().__init__('turtle_robot')
         # Static Broadcaster:
@@ -37,77 +57,97 @@ class TurtleRobot():
         #self.joint_pub = self.create_publisher(JointState, 'joint_states', qos_profile)
         
         #joint_state = JointState()
-        
-        # Establish initial state
-        self.timer = self.create_timer(1/self.freq, self.timer_callback)
-        self.state = State.START
-        self.pose = None
-        
-        
-        #self.odom_trans = None
-        
         # Declare parameters
         self.declare_parameter("frequency", 90.0)
         
         # Create Parameters
         self.freq = self.get_parameter("frequency").get_parameter_value().double_value
         
+        
+        # Establish initial state
+        self.timer = self.create_timer(1/self.freq, self.timer_callback)
+        self.state = State.START
+        self.pose = None
+        self.curr_waypoint = None
+        self._velocity = 1.0
+        #self.odom_trans = None
+        
+        
+        
         # Create subscribers
-        self._vel = self.create_subscription(Pose, "turtle1/pose", self.vel_callback, qos_profile)
+        self._vel = self.create_subscription(Pose, "pose", self.vel_callback, qos_profile)
         self._goal = self.create_subscription(PoseStamped, "goal_pose", self.goal_callback, qos_profile)
         # self._tilt = self.create_subscription(Tilt, "", qos_profile)
-
-    def get_distance(self, point1, point2):
-        return math.sqrt((point1.x - point2.x)**2 + (point1.y - point2.y)**2)
         # Create Publishers
-        self._pub = self.create_publisher(Twist, "turtle1/cmd_vel", qos_profile)
+        self._pub = self.create_publisher(Twist, "cmd_vel", qos_profile)
+        self._joint = self.create_publisher(JointState, "/joint_states", qos_profile)
         # self._odom = self.create_publisher(Odometry, "odometery", qos_profile)
+        
+        joint_msg = JointState()
+        joint_msg.header.stamp = self.get_clock().now().to_msg()
+        joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
+        joint_msg.position = [0.0, 0.0, 0.0]
+        self._joint.publish(joint_msg)
         
         #create the broadcaster
         self.broadcaster = TransformBroadcaster(self)
         
     def timer_callback(self):
         if self.state == State.START and self.pose is not None:
-            world_base_tf = TransformStamped()
-            world_base_tf.header.stamp = self.get_clock().now().to_msg()
-            world_base_tf.header.frame_id = 'world'
+            world_odom_tf = TransformStamped()
+            world_odom_tf.header.stamp = self.get_clock().now().to_msg()
+            world_odom_tf.header.frame_id = 'world'
+            world_odom_tf.child_frame_id = 'odom'
             
-            odom_trans = TransformStamped()
-            odom_trans.header.frame_id = 'odom'
-            odom_trans.child_frame_id = 'base_link'
-            world_base_tf.child_frame_id = 'odom'
-            world_base_tf.transform.translation.x = self.pose.x
-            world_base_tf.transform.translation.y = self.pose.y
+            world_odom_tf.transform.translation.x = self.pose.x
+            world_odom_tf.transform.translation.y = self.pose.y
+            world_odom_tf.transform.rotation.w = 1.0
             time = self.get_clock().now().to_msg()
             self.state = State.STOPPED
-            self.broadcaster.sendTransform(self.odom_trans)
+            self.static_broadcasters.sendTransform(world_odom_tf)
+            joint_msg = JointState()
+            joint_msg.header.stamp = self.get_clock().now().to_msg()
+            joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
+            joint_msg.position = [0.0, 0.0, 0.0]
+            self._joint.publish(joint_msg)
+        
             
             
-        elif self.state == State.MOVING:
+        elif self.state == State.MOVING and self.curr_waypoint is not None:
             twist = self.turtle_twist()
             self._pub.publish(twist)
-            
-    
-    def vel_callback(self, pose):
-        dx, dy = pose.x - self.pose.x, pose.y - self.pose.y
-        self.pose = pose
-        if self.state == State.MOVING:
+            self.translate_robot()
+        else:
             odom_trans = TransformStamped()
+            odom_trans.header.stamp = self.get_clock().now().to_msg()
             odom_trans.header.frame_id = 'odom'
             odom_trans.child_frame_id = 'base_link'
-            odom_trans.transform.translation.x = dx
-            odom_trans.transform.translation.y = dy
-            
-            odom_trans.header.stamp = self.get_clock().now().to_msg()
             self.broadcaster.sendTransform(odom_trans)
-            
+            joint_msg = JointState()
+            joint_msg.header.stamp = self.get_clock().now().to_msg()
+            joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
+            joint_msg.position = [0.0, 0.0, 0.0]
+            self._joint.publish(joint_msg)
         
-    def goal_callback(self, pose):
-        self.curr_waypoint = pose
-        if self.state == State.STOPPED:
+        
+            
+    
+    
+    def vel_callback(self, pose):
+        
+        if self.state == State.START or self.state == State.STOPPED:
+            self.pose = pose
+        
+        elif self.state == State.MOVING:
+            self.pose = pose
+        
+    def goal_callback(self, msg: Pose):
+        self.curr_waypoint = msg.pose.position
+        if self.state == State.STOPPED or self.state == State.START:
             self.state = State.MOVING
         return
     
+        
     def turtle_twist(self):
         """ Create a twist which moves the turtle proportionally towards the next waypoint """
         if self.state == State.MOVING:
@@ -122,6 +162,26 @@ class TurtleRobot():
             return vel_msg
         else:
             return Twist()
+    
+    def translate_robot(self):
+        odom_trans = TransformStamped()
+        odom_trans.header.stamp = self.get_clock().now().to_msg()
+        odom_trans.header.frame_id = 'odom'
+        odom_trans.child_frame_id = 'base_link'
+        odom_trans.transform.translation.x = self.pose.x
+        odom_trans.transform.translation.y = self.pose.y
+        
+        odom_trans.transform.rotation = quatToMsg(axangle2quat([0, 0, 1.0], self.pose.theta))
+        odom_trans.header.stamp = self.get_clock().now().to_msg()
+        self.broadcaster.sendTransform(odom_trans)
+        
+        joint_msg = JointState()
+        joint_msg.header.stamp = self.get_clock().now().to_msg()
+        joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
+        joint_msg.position = [0.0, self.pose.theta, 0.0]
+        self._joint.publish(joint_msg)
+        
+        
         
 
         

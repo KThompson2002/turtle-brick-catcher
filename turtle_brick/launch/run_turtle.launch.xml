@@ -1,5 +1,7 @@
 <launch>
-    <node pkg="turtlesim" exec="turtlesim_node" name="turtlesim"/>
+    <node pkg="turtlesim" exec="turtlesim_node" name="turtlesim">
+        <param name="holonomic" value="True" />
+    </node>
 
     <node pkg="turtle_brick" exec="turtle_robot" name="turtle_robot">
         <param name="frequency" value="100.0" />

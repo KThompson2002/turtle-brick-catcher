@@ -4,7 +4,7 @@
 
     <xacro:property name="wheel_radius" value="${turtle_config['dimensions']['wheel_radius']}"/>
     <xacro:property name="platform_height" value="${turtle_config['dimensions']['platform_height'] - wheel_radius*2}"/>
-    <xacro:property name="fixed_length" value="${0.4*platform_height}" />
+    <xacro:property name="cylinder_length" value="${0.4*platform_height}" />
     <xacro:property name="base_length" value="${0.4*platform_height}" />
     <link name="base_link">
         <visual>
@@ -21,18 +21,18 @@
     </link>
 
     
-    <link name="fixed_link">
+    <link name="cylinder_link">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <cylinder length="${fixed_length}" radius="0.2"/>
+                <cylinder length="${cylinder_length}" radius="0.2"/>
             </geometry>
             <material name="white"/>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <cylinder length="${fixed_length}" radius="0.2" />
+                <cylinder length="${cylinder_length}" radius="0.2" />
             </geometry>
         </collision>
     </link>
@@ -89,15 +89,15 @@
         </collision>
     </link>
 
-    <joint name="fixed_joint" type="fixed">
-        <origin xyz="0 0 ${fixed_length/2 + base_length/2}" rpy="0 0 0"/>
+    <joint name="cylinder_joint" type="fixed">
+        <origin xyz="0 0 ${cylinder_length/2 + base_length/2}" rpy="0 0 0"/>
         <parent link="base_link"/>
-        <child link="fixed_link"/>
+        <child link="cylinder_link"/>
     </joint>
 
     <joint name="platform_joint" type="revolute">
-        <origin xyz="0 0 ${fixed_length/2}" rpy="0 0 0"/>
-        <parent link="fixed_link"/>
+        <origin xyz="0 0 ${cylinder_length/2}" rpy="0 0 0"/>
+        <parent link="cylinder_link"/>
         <child link="platform_link"/>
         <axis xyz="1 0 0"/>
         <limit lower="0" upper="${pi*2}" effort="100" velocity="100"/>
