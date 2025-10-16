@@ -1,0 +1,11 @@
+<launch>
+    <node pkg="turtlesim" exec="turtlesim_node" name="turtlesim"/>
+
+    <node pkg="turtle_brick" exec="turtle_robot" name="turtle_robot">
+        <param name="frequency" value="100.0" />
+        <remap from="cmd_vel" to="turtle1/cmd_vel" />
+        <remap from="pose" to="turtle1/pose" />
+    </node>
+
+     <include file="$(find-pkg-share turtle_brick)/launch/show_turtle.launch.xml"/>
+</launch>
