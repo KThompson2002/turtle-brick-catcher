@@ -2,8 +2,8 @@
     <xacro:include filename="materials.urdf.xacro"/>
     <xacro:property name="turtle_config" value="${xacro.load_yaml('$(find turtle_brick)/config/turtle.yaml')}"/>
 
-    <xacro:property name="wheel_radius" value="${turtle_config['dimensions']['wheel_radius']}"/>
-    <xacro:property name="platform_height" value="${turtle_config['dimensions']['platform_height'] - wheel_radius*2}"/>
+    <xacro:property name="wheel_radius" value="${turtle_config['turtle_robot']['ros__parameters']['wheel_radius']}"/>
+    <xacro:property name="platform_height" value="${turtle_config['turtle_robot']['ros__parameters']['platform_height'] - wheel_radius*2}"/>
     <xacro:property name="cylinder_length" value="${0.4*platform_height}" />
     <xacro:property name="base_length" value="${0.4*platform_height}" />
     <link name="base_link">

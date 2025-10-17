@@ -1,12 +1,13 @@
 <launch>
     <node pkg="turtlesim" exec="turtlesim_node" name="turtlesim">
-        <param name="holonomic" value="True" />
+        <param name="holonomic" value="True"/>
     </node>
 
     <node pkg="turtle_brick" exec="turtle_robot" name="turtle_robot">
-        <param name="frequency" value="100.0" />
-        <remap from="cmd_vel" to="turtle1/cmd_vel" />
-        <remap from="pose" to="turtle1/pose" />
+        <param name="frequency" value="100.0"/>
+        <param from="$(find-pkg-share turtle_brick)/config/turtle.yaml" />
+        <remap from="cmd_vel" to="turtle1/cmd_vel"/>
+        <remap from="pose" to="turtle1/pose"/>
     </node>
 
      <include file="$(find-pkg-share turtle_brick)/launch/show_turtle.launch.xml"/>

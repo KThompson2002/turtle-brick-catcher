@@ -1,6 +1,6 @@
-
-dimensions:
-  platform_height: 9
-  wheel_radius: 2
-  max_velocity: 100
-  gravity_accel: 10
+turtle_robot:
+  ros__parameters:
+    platform_height: 9.0
+    wheel_radius: 2.0
+    max_velocity: 1.5
+    gravity_accel: 9.81

@@ -59,10 +59,17 @@ class TurtleRobot(Node):
         #joint_state = JointState()
         # Declare parameters
         self.declare_parameter("frequency", 90.0)
+        self.declare_parameter("platform_height", 9.0)
+        self.declare_parameter("wheel_radius", 2.0)
+        self.declare_parameter("max_velocity", 1.5)
+        self.declare_parameter("gravity_accel", 9.81)
         
         # Create Parameters
         self.freq = self.get_parameter("frequency").get_parameter_value().double_value
-        
+        self.platform_height = self.get_parameter("platform_height").get_parameter_value().double_value
+        self.wheel_radius = self.get_parameter("wheel_radius").get_parameter_value().double_value
+        self.max_velocity = self.get_parameter("max_velocity").get_parameter_value().double_value
+        self.gravity = self.get_parameter("gravity_accel").get_parameter_value().double_value
         
         # Establish initial state
         self.timer = self.create_timer(1/self.freq, self.timer_callback)
@@ -70,7 +77,11 @@ class TurtleRobot(Node):
         self.pose = None
         self.curr_waypoint = None
         self._velocity = 1.0
-        #self.odom_trans = None
+        self.stem_angle = 0.0
+        self.wheel_angle = 0.0
+        self.platform_tilt = 0.0
+        
+        self.curr_vel = None
         
         
         
@@ -102,7 +113,7 @@ class TurtleRobot(Node):
             world_odom_tf.transform.translation.x = self.pose.x
             world_odom_tf.transform.translation.y = self.pose.y
             world_odom_tf.transform.rotation.w = 1.0
-            time = self.get_clock().now().to_msg()
+            # time = self.get_clock().now().to_msg()
             self.state = State.STOPPED
             self.static_broadcasters.sendTransform(world_odom_tf)
             joint_msg = JointState()
@@ -130,16 +141,9 @@ class TurtleRobot(Node):
             self._joint.publish(joint_msg)
         
         
-            
-    
     
     def vel_callback(self, pose):
-        
-        if self.state == State.START or self.state == State.STOPPED:
-            self.pose = pose
-        
-        elif self.state == State.MOVING:
-            self.pose = pose
+        self.pose = pose
         
     def goal_callback(self, msg: Pose):
         self.curr_waypoint = msg.pose.position
@@ -159,6 +163,7 @@ class TurtleRobot(Node):
             y_vel = dy * self._velocity
             vel_msg.linear.x = x_vel
             vel_msg.linear.y = y_vel
+            self.curr_vel = vel_msg
             return vel_msg
         else:
             return Twist()
@@ -178,11 +183,22 @@ class TurtleRobot(Node):
         joint_msg = JointState()
         joint_msg.header.stamp = self.get_clock().now().to_msg()
         joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
-        joint_msg.position = [0.0, self.pose.theta, 0.0]
+        
+        if self.curr_vel is not None:
+            xdot = self.curr_vel.linear.x
+            ydot = self.curr_vel.linear.y
+            if math.hypot(xdot, ydot) > 0:
+                self.stem_angle = math.atan2(xdot, ydot)
+            
+            ang_vel = math.sqrt(xdot**2 + ydot**2)/self.wheel_radius
+            self.wheel_angle += ang_vel * (1/self.freq)
+            self.wheel_angle = math.atan2(math.sin(self.wheel_angle), math.cos(self.wheel_angle))
+            
+                
+        
+        joint_msg.position = [self.platform_tilt, self.stem_angle, self.wheel_angle]
+            
         self._joint.publish(joint_msg)
-        
-        
-        
 
         
 def main(args=None):
