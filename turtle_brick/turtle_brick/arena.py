@@ -7,7 +7,7 @@ from rclpy.qos import QoSDurabilityPolicy, QoSProfile
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
-# from turtle_brick_interfaces.srv import Place
+from turtle_brick_interfaces.srv import Place
 
 class Arena(Node):
     """
@@ -22,6 +22,8 @@ class Arena(Node):
         
         markerQoS = QoSProfile(depth=10, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
         self.pub = self.create_publisher(Marker, 'arena_wall', markerQoS)
+        self._brick = self.create_service(Place, "place", markerQoS)
+        
         
         self.m1 = Marker()
         self.m1.header.frame_id = "odom"

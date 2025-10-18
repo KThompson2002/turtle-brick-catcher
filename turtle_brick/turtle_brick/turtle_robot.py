@@ -76,7 +76,7 @@ class TurtleRobot(Node):
         self.state = State.START
         self.pose = None
         self.curr_waypoint = None
-        self._velocity = 1.0
+        self._velocity = 1.5
         self.stem_angle = 0.0
         self.wheel_angle = 0.0
         self.platform_tilt = 0.0
@@ -86,11 +86,11 @@ class TurtleRobot(Node):
         
         
         # Create subscribers
-        self._vel = self.create_subscription(Pose, "pose", self.vel_callback, qos_profile)
-        self._goal = self.create_subscription(PoseStamped, "goal_pose", self.goal_callback, qos_profile)
+        self._vel = self.create_subscription(Pose, "/pose", self.vel_callback, qos_profile)
+        self._goal = self.create_subscription(PoseStamped, "/goal_pose", self.goal_callback, qos_profile)
         # self._tilt = self.create_subscription(Tilt, "", qos_profile)
         # Create Publishers
-        self._pub = self.create_publisher(Twist, "cmd_vel", qos_profile)
+        self._pub = self.create_publisher(Twist, "/cmd_vel", qos_profile)
         self._joint = self.create_publisher(JointState, "/joint_states", qos_profile)
         # self._odom = self.create_publisher(Odometry, "odometery", qos_profile)
         
@@ -110,8 +110,8 @@ class TurtleRobot(Node):
             world_odom_tf.header.frame_id = 'world'
             world_odom_tf.child_frame_id = 'odom'
             
-            world_odom_tf.transform.translation.x = self.pose.x
-            world_odom_tf.transform.translation.y = self.pose.y
+            world_odom_tf.transform.translation.x = 5.544
+            world_odom_tf.transform.translation.y = 5.544
             world_odom_tf.transform.rotation.w = 1.0
             # time = self.get_clock().now().to_msg()
             self.state = State.STOPPED
@@ -173,10 +173,15 @@ class TurtleRobot(Node):
         odom_trans.header.stamp = self.get_clock().now().to_msg()
         odom_trans.header.frame_id = 'odom'
         odom_trans.child_frame_id = 'base_link'
-        odom_trans.transform.translation.x = self.pose.x
-        odom_trans.transform.translation.y = self.pose.y
         
-        odom_trans.transform.rotation = quatToMsg(axangle2quat([0, 0, 1.0], self.pose.theta))
+        # if self.curr_vel is not None:
+        #     odom_trans.transform.translation.x = self.curr_vel.linear.x
+        #     odom_trans.transform.translation.y = self.curr_vel.linear.y
+        if self.pose is not None:
+            odom_trans.transform.translation.x = self.pose.x - 5.544
+            odom_trans.transform.translation.y = self.pose.y - 5.544
+            odom_trans.transform.translation.z = 0.0
+            odom_trans.transform.rotation = quatToMsg(axangle2quat([0, 0, 1.0], self.pose.theta))
         odom_trans.header.stamp = self.get_clock().now().to_msg()
         self.broadcaster.sendTransform(odom_trans)
         
