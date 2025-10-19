@@ -13,7 +13,7 @@ from rclpy.qos import QoSDurabilityPolicy, QoSProfile
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
-from tf2_ros import TransformBroadcaster
+from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
 from std_srvs.srv import Empty
@@ -66,6 +66,9 @@ class Arena(Node):
         # Establish variables
         self.brick_state = BrickState.NONEXIST
         self.world = None
+        self.publish_walls()
+        self.brick_off_x = 0
+        self.brick_off_y = 0
         # Instantiate Brick Marker
         self.brick_marker = Marker()
         
@@ -74,12 +77,14 @@ class Arena(Node):
         self._drop = self.create_service(Empty, "drop",  self.drop_callback)
         
         # Publish arena walls
-        self.publish_walls()
         
         
         # Create the broadcaster
         self.broadcaster = TransformBroadcaster(self)
         
+        # Create tf-tree listener
+        self.tf_buffer = Buffer()
+        self.listener = TransformListener(self.tf_buffer, self)
         
     
     def timer_callback(self):
@@ -89,8 +94,35 @@ class Arena(Node):
             self.world.drop()
             self.broadcast_brick()
             self.pub_brick_marker()
-            # brick = self.world._brick
-            # if brick[2] <= 
+            
+            # Get Brick location
+            brick = self.world._brick
+            
+            # Establish TF tree listener
+            t = self.tf_buffer.lookup_transform(
+                'odom',
+                'base_link',
+                rclpy.time.Time())
+            x = t.transform.translation.x + 5.544
+            y = t.transform.translation.y + 5.544
+            self.get_logger().info(f"Listening: {x}, {y}")
+            if get_distance([x,y], brick) < self.platform_rad and brick[2] <= self.platform_height:
+                self.brick_state = BrickState.CAUGHT
+                self.brick_off_x = x - brick[0]
+                self.brick_off_y = y - brick[1]
+        elif self.brick_state == BrickState.CAUGHT:
+            self.broadcast_brick()
+            t = self.tf_buffer.lookup_transform(
+                'odom',
+                'base_link',
+                rclpy.time.Time())
+            x = t.transform.translation.x + 5.544
+            y = t.transform.translation.y + 5.544
+            self.world._brick[0] = x - self.brick_off_x
+            self.world._brick[1] = y - self.brick_off_y
+            self.broadcast_brick()
+            self.pub_brick_marker()
+            
         
     
     def place_callback(self, request, response):
@@ -198,11 +230,11 @@ class Arena(Node):
         self.m1.type =  Marker.CUBE
         self.m1.action = Marker.ADD
         self.m1.scale.x = 1.0
-        self.m1.scale.y = 11.0
+        self.m1.scale.y = 13.0
         self.m1.scale.z = 1.0
         self.m1.pose.position.x = -6.0
         self.m1.pose.position.y = 0.0
-        self.m1.pose.position.z = 0.0
+        self.m1.pose.position.z = 0.5
         self.m1.color.r = 1.0
         self.m1.color.g = 0.0
         self.m1.color.b = 0.0
@@ -217,11 +249,11 @@ class Arena(Node):
         self.m2.type =  Marker.CUBE
         self.m2.action = Marker.ADD
         self.m2.scale.x = 1.0
-        self.m2.scale.y = 11.0
+        self.m2.scale.y = 13.0
         self.m2.scale.z = 1.0
         self.m2.pose.position.x = 6.0
         self.m2.pose.position.y = 0.0
-        self.m2.pose.position.z = 0.0
+        self.m2.pose.position.z = 0.5
         self.m2.color.r = 1.0
         self.m2.color.g = 0.0
         self.m2.color.b = 0.0
@@ -240,7 +272,7 @@ class Arena(Node):
         self.m3.scale.z = 1.0
         self.m3.pose.position.x = 0.0
         self.m3.pose.position.y = 6.0
-        self.m3.pose.position.z = 0.0
+        self.m3.pose.position.z = 0.5
         self.m3.color.r = 1.0
         self.m3.color.g = 0.0
         self.m3.color.b = 0.0
@@ -259,7 +291,7 @@ class Arena(Node):
         self.m4.scale.z = 1.0
         self.m4.pose.position.x = 0.0
         self.m4.pose.position.y = -6.0
-        self.m4.pose.position.z = 0.0
+        self.m4.pose.position.z = 0.5
         self.m4.color.r = 1.0
         self.m4.color.g = 0.0
         self.m4.color.b = 0.0
@@ -267,7 +299,13 @@ class Arena(Node):
         self.pub.publish(self.m4)
         
         
+def get_distance(point1, point2):
+        """ Calculates straight line distance between two poses
         
+        point1 - initial point
+        point2 - end point
+        """
+        return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
         
         
 def main(args=None):

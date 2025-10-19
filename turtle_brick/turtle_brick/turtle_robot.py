@@ -70,6 +70,7 @@ class TurtleRobot(Node):
         self.wheel_radius = self.get_parameter("wheel_radius").get_parameter_value().double_value
         self.max_velocity = self.get_parameter("max_velocity").get_parameter_value().double_value
         self.gravity = self.get_parameter("gravity_accel").get_parameter_value().double_value
+        self.disp = self.wheel_radius*2 + (0.5+0.2)
         
         # Establish initial state
         self.timer = self.create_timer(1/self.freq, self.timer_callback)
@@ -133,6 +134,7 @@ class TurtleRobot(Node):
             odom_trans.header.stamp = self.get_clock().now().to_msg()
             odom_trans.header.frame_id = 'odom'
             odom_trans.child_frame_id = 'base_link'
+            odom_trans.transform.translation.z = self.disp
             self.broadcaster.sendTransform(odom_trans)
             joint_msg = JointState()
             joint_msg.header.stamp = self.get_clock().now().to_msg()
@@ -180,7 +182,7 @@ class TurtleRobot(Node):
         if self.pose is not None:
             odom_trans.transform.translation.x = self.pose.x - 5.544
             odom_trans.transform.translation.y = self.pose.y - 5.544
-            odom_trans.transform.translation.z = 0.0
+            odom_trans.transform.translation.z = self.disp
             odom_trans.transform.rotation = quatToMsg(axangle2quat([0, 0, 1.0], self.pose.theta))
         odom_trans.header.stamp = self.get_clock().now().to_msg()
         self.broadcaster.sendTransform(odom_trans)
