@@ -47,3 +47,14 @@ class World:
         self.vel += self.gravity*self.dt
         self.brick[2] -= self.vel*self.dt 
         pass
+    
+    def tilt(self, angle):
+        a = self.gravity*np.sin(angle)
+        
+        self.vel += a * self.dt
+        s = self.vel * self.dt
+        dy = s * np.cos(angle)
+        dz = s * np.sin(angle)
+        
+        self.brick[1] -= dy
+        self.brick[2] -= dz

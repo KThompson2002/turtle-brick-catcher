@@ -29,7 +29,7 @@ class BrickState(Enum):
     """
     NONEXIST = auto()
     STATIC = auto(),
-    TILTING = auto(),
+    SLIDING = auto(),
     DROPPING = auto(),
     CAUGHT = auto()
 
@@ -139,10 +139,23 @@ class Arena(Node):
             self.world._brick[1] = y - self.brick_off_y
             self.broadcast_brick()
             self.pub_brick_marker()
-    
+        elif self.brick_state == BrickState.SLIDING:
+            self.world.tilt(self.platform_tilt)
+            self.broadcast_brick()
+            self.pub_brick_marker()
+            t = self.tf_buffer.lookup_transform(
+                'odom',
+                'base_link',
+                rclpy.time.Time())
+            x = t.transform.translation.x + 5.544
+            y = t.transform.translation.y + 5.544
+            if get_distance([self.world._brick[0], self.world._brick[1]], [x, y]) > (self.platform_rad+0.5):
+                self.brick_state = BrickState.DROPPING
+            
     def tilt_callback(self, tilt):
         self.platform_tilt = tilt.tilt_angle
-        # self.brick_state = BrickState.TILTING()
+        self.world.vel = 0
+        self.brick_state = BrickState.SLIDING
         
     
     def place_callback(self, request, response):
