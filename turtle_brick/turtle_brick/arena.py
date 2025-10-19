@@ -4,22 +4,24 @@ import math
 
 
 from geometry_msgs.msg import TransformStamped
-from interactive_markers.interactive_marker_server import (
-    InteractiveMarker, InteractiveMarkerServer)
+# from interactive_markers.interactive_marker_server import (
+#     InteractiveMarker, InteractiveMarkerServer)
 
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
-from visualization_msgs.msg import InteractiveMarkerControl, Marker
+from visualization_msgs.msg import Marker
 
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
 from std_srvs.srv import Empty
+from std_msgs.msg import Bool
 from turtle_brick_interfaces.srv import Place
 
 from turtle_brick import physics
+from turtle_brick_interfaces.msg import Tilt
 
 class BrickState(Enum):
     """ Current state of the system.
@@ -27,6 +29,7 @@ class BrickState(Enum):
     """
     NONEXIST = auto()
     STATIC = auto(),
+    TILTING = auto(),
     DROPPING = auto(),
     CAUGHT = auto()
 
@@ -41,6 +44,7 @@ class Arena(Node):
     def __init__(self):
         super().__init__('arena')
         
+        qos_profile = QoSProfile(depth=10)
         markerQoS = QoSProfile(depth=10, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
         self.pub = self.create_publisher(Marker, 'arena_wall', markerQoS)
         self.brick_pub = self.create_publisher(Marker, 'brick_marker', markerQoS)
@@ -76,8 +80,13 @@ class Arena(Node):
         self._brick = self.create_service(Place, "place", self.place_callback)
         self._drop = self.create_service(Empty, "drop",  self.drop_callback)
         
-        # Publish arena walls
+        # Create tilt subscriber
+        self.platform_tilt = 0.0
+        self._tilt = self.create_subscription(Tilt, "/tilt", self.tilt_callback, qos_profile)
         
+        # Create publisher for catcher Node
+        self.drop_not = self.create_publisher(Bool, "drop_event", qos_profile)
+        self.catch_not = self.create_publisher(Bool, "caught_event", qos_profile)
         
         # Create the broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -105,11 +114,16 @@ class Arena(Node):
                 rclpy.time.Time())
             x = t.transform.translation.x + 5.544
             y = t.transform.translation.y + 5.544
-            self.get_logger().info(f"Listening: {x}, {y}")
+            # self.get_logger().info(f"Listening: {x}, {y}")
             if get_distance([x,y], brick) < self.platform_rad and brick[2] <= self.platform_height:
                 self.brick_state = BrickState.CAUGHT
+                msg = Bool()
+                msg.data = True
+                self.catch_not.publish(msg)
                 self.brick_off_x = x - brick[0]
                 self.brick_off_y = y - brick[1]
+            elif brick[2] <= 0.0:
+                self.brick_state = BrickState.STATIC
         elif self.brick_state == BrickState.CAUGHT:
             self.broadcast_brick()
             t = self.tf_buffer.lookup_transform(
@@ -122,7 +136,10 @@ class Arena(Node):
             self.world._brick[1] = y - self.brick_off_y
             self.broadcast_brick()
             self.pub_brick_marker()
-            
+    
+    def tilt_callback(self, tilt):
+        self.platform_tilt = tilt
+        self.brick_state = BrickState.TILTING()
         
     
     def place_callback(self, request, response):
@@ -217,6 +234,9 @@ class Arena(Node):
         Empty Return
         """
         self.brick_state = BrickState.DROPPING
+        msg = Bool()
+        msg.data = True
+        self.drop_not.publish(msg)
         return response
     
     

@@ -89,7 +89,7 @@ class TurtleRobot(Node):
         # Create subscribers
         self._vel = self.create_subscription(Pose, "/pose", self.vel_callback, qos_profile)
         self._goal = self.create_subscription(PoseStamped, "/goal_pose", self.goal_callback, qos_profile)
-        # self._tilt = self.create_subscription(Tilt, "", qos_profile)
+        self._tilt = self.create_subscription(Tilt, "/tilt", self.tilt_callback, qos_profile)
         # Create Publishers
         self._pub = self.create_publisher(Twist, "/cmd_vel", qos_profile)
         self._joint = self.create_publisher(JointState, "/joint_states", qos_profile)
@@ -153,6 +153,8 @@ class TurtleRobot(Node):
             self.state = State.MOVING
         return
     
+    def tilt_callback(self, tilt):
+        self.platform_tilt = tilt
         
     def turtle_twist(self):
         """ Create a twist which moves the turtle proportionally towards the next waypoint """

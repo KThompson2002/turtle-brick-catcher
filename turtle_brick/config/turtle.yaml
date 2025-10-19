@@ -2,5 +2,5 @@ turtle_robot:
   ros__parameters:
     platform_height: 5.0
     wheel_radius: 1.0
-    max_velocity: 1.5
+    max_velocity: 3.0
     gravity_accel: 9.81
