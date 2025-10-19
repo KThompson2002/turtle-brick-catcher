@@ -129,11 +129,11 @@ class TurtleRobot(Node):
             self._joint.publish(joint_msg)
         
             
-            
         elif self.state == State.MOVING and self.curr_waypoint is not None:
             twist = self.turtle_twist()
             self._pub.publish(twist)
             self.translate_robot()
+            self.publish_joints()
             if get_distance([self.curr_waypoint.x, self.curr_waypoint.y], [self.pose.x, self.pose.y]) < 0.01:
                 arrive_msg = Bool()
                 if self.pose.y < 5.544:
@@ -144,17 +144,8 @@ class TurtleRobot(Node):
                 self._arrive.publish(arrive_msg)
                 self.state = State.STOPPED
         else:
-            odom_trans = TransformStamped()
-            odom_trans.header.stamp = self.get_clock().now().to_msg()
-            odom_trans.header.frame_id = 'odom'
-            odom_trans.child_frame_id = 'base_link'
-            odom_trans.transform.translation.z = self.disp
-            self.broadcaster.sendTransform(odom_trans)
-            joint_msg = JointState()
-            joint_msg.header.stamp = self.get_clock().now().to_msg()
-            joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
-            joint_msg.position = [self.platform_tilt, 0.0, 0.0]
-            self._joint.publish(joint_msg)
+            self.translate_robot()
+            self.publish_joints()
         
         
     
@@ -203,6 +194,8 @@ class TurtleRobot(Node):
         odom_trans.header.stamp = self.get_clock().now().to_msg()
         self.broadcaster.sendTransform(odom_trans)
         
+        
+    def publish_joints(self):
         joint_msg = JointState()
         joint_msg.header.stamp = self.get_clock().now().to_msg()
         joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
@@ -216,12 +209,10 @@ class TurtleRobot(Node):
             ang_vel = math.sqrt(xdot**2 + ydot**2)/self.wheel_radius
             self.wheel_angle += ang_vel * (1/self.freq)
             self.wheel_angle = math.atan2(math.sin(self.wheel_angle), math.cos(self.wheel_angle))
-            
-                
         
         joint_msg.position = [self.platform_tilt, self.stem_angle, self.wheel_angle]
-            
         self._joint.publish(joint_msg)
+        
 
         
 def get_distance(point1, point2):
