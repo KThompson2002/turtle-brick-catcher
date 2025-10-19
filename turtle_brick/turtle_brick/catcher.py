@@ -10,6 +10,7 @@ from geometry_msgs.msg import PoseStamped
 from visualization_msgs.msg import Marker
 from std_msgs.msg import Bool
 from tf2_ros import Buffer, TransformListener
+from turtle_brick_interfaces.msg import Tilt
 
 class BrickState(Enum):
     """ Current state of the system.
@@ -18,8 +19,6 @@ class BrickState(Enum):
     STATIC = auto(),
     DROPPING = auto(),
     CARRYING = auto()
-
-from std_srvs.srv import Empty
 
 
 class Catcher(Node):
@@ -36,19 +35,26 @@ class Catcher(Node):
         self.declare_parameter("wheel_radius", 2.0)
         self.declare_parameter("max_velocity", 3.0)
         self.declare_parameter("gravity_accel", 9.81)
-        
+        self.declare_parameter("platform_radius", 2.0)
+
         # Establish Parameters
         self.freq = self.get_parameter("frequency").get_parameter_value().double_value
         self.platform_height = self.get_parameter("platform_height").get_parameter_value().double_value
         self.wheel_radius = self.get_parameter("wheel_radius").get_parameter_value().double_value
         self.max_velocity = self.get_parameter("max_velocity").get_parameter_value().double_value
         self.gravity = self.get_parameter("gravity_accel").get_parameter_value().double_value
+        self.platform_rad = self.get_parameter("platform_radius").get_parameter_value().double_value
+
         
         # Create publisher
         self._goal = self.create_publisher(PoseStamped, '/goal_pose', qos_profile)        
         # Create subscribers for arena node
         self.create_subscription(Bool, 'drop_event', self.drop_callback, qos_profile)
-        self.create_subscription(Bool, 'caught_event', self.caught_callback, qos_profile)
+        # self.create_subscription(Bool, 'caught_event', self.caught_callback, qos_profile)
+        self.create_subscription(Bool, '/arrive', self.arrive_callback, qos_profile)
+        
+        # Create publisher for turtle-robot node
+        self._tilt = self.create_publisher(Tilt, '/tilt', qos_profile)
         
         # Establish initial conditions
         self.brick_state = BrickState.STATIC
@@ -117,14 +123,35 @@ class Catcher(Node):
             mark.pose.position.z = 10.0
             mark.scale.z = 2.0
             self.pub.publish(mark)
+    
+    def arrive_callback(self, msg):
+        if self.brick_state == BrickState.CARRYING:
+            if msg.data:
+                tilt_msg = Tilt()
+                tilt_msg.tilt_angle = (11*math.pi)/6
+                self._tilt.publish(tilt_msg)
+            else:
+                tilt_msg = Tilt()
+                tilt_msg.tilt_angle = math.pi/6
+                self._tilt.publish(tilt_msg)
             
-    def caught_callback(self, msg):
-        goal_msg = PoseStamped()
-        goal_msg.pose.position.x = 5.544
-        goal_msg.pose.position.y = 5.544
-        self._goal.publish(goal_msg)
-        
-        self.brick_state = BrickState.CARRYING
+            self.brick_state == BrickState.STATIC
+        else:
+            # t = self.tf_buffer.lookup_transform(
+            #     'odom',
+            #     'base_link',
+            #     rclpy.time.Time())
+            # base_y = t.transform.translation.y + 5.544
+            goal_msg = PoseStamped()
+            goal_msg.pose.position.x = 5.544
+            if msg.data:
+                goal_msg.pose.position.y = 5.544 - self.platform_rad
+            else:
+                goal_msg.pose.position.y = 5.544 + self.platform_rad
+            self._goal.publish(goal_msg)
+            
+            self.brick_state = BrickState.CARRYING
+            
         
         
 def get_distance(point1, point2):

@@ -10,6 +10,7 @@ from turtlesim_msgs.msg import Pose
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Quaternion, TransformStamped, PoseStamped
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Bool
 
 from tf2_ros import TransformBroadcaster
 from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
@@ -45,6 +46,7 @@ def quatToMsg(quat):
     """
     return Quaternion(w=quat[0], x=quat[1], y=quat[2], z=quat[3])
 
+
 class TurtleRobot(Node):
     def __init__(self):
         super().__init__('turtle_robot')
@@ -54,14 +56,13 @@ class TurtleRobot(Node):
         # Creating Transforms:
         
         qos_profile = QoSProfile(depth=10) # durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
-        #self.joint_pub = self.create_publisher(JointState, 'joint_states', qos_profile)
         
         #joint_state = JointState()
         # Declare parameters
         self.declare_parameter("frequency", 90.0)
         self.declare_parameter("platform_height", 9.0)
         self.declare_parameter("wheel_radius", 2.0)
-        self.declare_parameter("max_velocity", 1.5)
+        self.declare_parameter("max_velocity", 3.0)
         self.declare_parameter("gravity_accel", 9.81)
         
         # Create Parameters
@@ -80,10 +81,12 @@ class TurtleRobot(Node):
         self._velocity = 1.5
         self.stem_angle = 0.0
         self.wheel_angle = 0.0
+        
+        #Create Tilt Subscriber
         self.platform_tilt = 0.0
+        self._tilt = self.create_subscription(Tilt, "/tilt", self.tilt_callback, qos_profile)
         
         self.curr_vel = None
-        
         
         
         # Create subscribers
@@ -93,6 +96,8 @@ class TurtleRobot(Node):
         # Create Publishers
         self._pub = self.create_publisher(Twist, "/cmd_vel", qos_profile)
         self._joint = self.create_publisher(JointState, "/joint_states", qos_profile)
+        self._arrive = self.create_publisher(Bool, "/arrive", qos_profile)
+        
         # self._odom = self.create_publisher(Odometry, "odometery", qos_profile)
         
         joint_msg = JointState()
@@ -129,6 +134,15 @@ class TurtleRobot(Node):
             twist = self.turtle_twist()
             self._pub.publish(twist)
             self.translate_robot()
+            if get_distance([self.curr_waypoint.x, self.curr_waypoint.y], [self.pose.x, self.pose.y]) < 0.01:
+                arrive_msg = Bool()
+                if self.pose.y < 5.544:
+                    arrive_msg.data = True
+                else:
+                    arrive_msg.data = False
+                
+                self._arrive.publish(arrive_msg)
+                self.state = State.STOPPED
         else:
             odom_trans = TransformStamped()
             odom_trans.header.stamp = self.get_clock().now().to_msg()
@@ -139,7 +153,7 @@ class TurtleRobot(Node):
             joint_msg = JointState()
             joint_msg.header.stamp = self.get_clock().now().to_msg()
             joint_msg.name = ["platform_joint", "stem_joint", "wheel_joint"]
-            joint_msg.position = [0.0, 0.0, 0.0]
+            joint_msg.position = [self.platform_tilt, 0.0, 0.0]
             self._joint.publish(joint_msg)
         
         
@@ -154,7 +168,7 @@ class TurtleRobot(Node):
         return
     
     def tilt_callback(self, tilt):
-        self.platform_tilt = tilt
+        self.platform_tilt = tilt.tilt_angle
         
     def turtle_twist(self):
         """ Create a twist which moves the turtle proportionally towards the next waypoint """
@@ -209,6 +223,15 @@ class TurtleRobot(Node):
             
         self._joint.publish(joint_msg)
 
+        
+def get_distance(point1, point2):
+        """ Calculates straight line distance between two poses
+        
+        point1 - initial point
+        point2 - end point
+        """
+        return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+      
         
 def main(args=None):
     rclpy.init(args=args)

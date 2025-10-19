@@ -46,6 +46,8 @@ class Arena(Node):
         
         qos_profile = QoSProfile(depth=10)
         markerQoS = QoSProfile(depth=10, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+        
+        # Create marker publishers
         self.pub = self.create_publisher(Marker, 'arena_wall', markerQoS)
         self.brick_pub = self.create_publisher(Marker, 'brick_marker', markerQoS)
         
@@ -84,9 +86,10 @@ class Arena(Node):
         self.platform_tilt = 0.0
         self._tilt = self.create_subscription(Tilt, "/tilt", self.tilt_callback, qos_profile)
         
+        
         # Create publisher for catcher Node
         self.drop_not = self.create_publisher(Bool, "drop_event", qos_profile)
-        self.catch_not = self.create_publisher(Bool, "caught_event", qos_profile)
+        # self.catch_not = self.create_publisher(Bool, "caught_event", qos_profile)
         
         # Create the broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -117,9 +120,9 @@ class Arena(Node):
             # self.get_logger().info(f"Listening: {x}, {y}")
             if get_distance([x,y], brick) < self.platform_rad and brick[2] <= self.platform_height:
                 self.brick_state = BrickState.CAUGHT
-                msg = Bool()
-                msg.data = True
-                self.catch_not.publish(msg)
+                # msg = Bool()
+                # msg.data = True
+                # self.catch_not.publish(msg)
                 self.brick_off_x = x - brick[0]
                 self.brick_off_y = y - brick[1]
             elif brick[2] <= 0.0:
@@ -138,8 +141,8 @@ class Arena(Node):
             self.pub_brick_marker()
     
     def tilt_callback(self, tilt):
-        self.platform_tilt = tilt
-        self.brick_state = BrickState.TILTING()
+        self.platform_tilt = tilt.tilt_angle
+        # self.brick_state = BrickState.TILTING()
         
     
     def place_callback(self, request, response):
