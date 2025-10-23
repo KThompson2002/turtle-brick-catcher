@@ -98,7 +98,7 @@ class TurtleRobot(Node):
         self._joint = self.create_publisher(JointState, "/joint_states", qos_profile)
         self._arrive = self.create_publisher(Bool, "/arrive", qos_profile)
         
-        # self._odom = self.create_publisher(Odometry, "odometery", qos_profile)
+        self._odom = self.create_publisher(Odometry, "/odom", qos_profile)
         
         joint_msg = JointState()
         joint_msg.header.stamp = self.get_clock().now().to_msg()
@@ -198,7 +198,16 @@ class TurtleRobot(Node):
             odom_trans.transform.rotation = quatToMsg(axangle2quat([0, 0, 1.0], self.pose.theta))
         odom_trans.header.stamp = self.get_clock().now().to_msg()
         self.broadcaster.sendTransform(odom_trans)
-        
+
+        odom_msg = Odometry()
+        odom_msg.header.stamp = odom_trans.header.stamp
+        odom_msg.header.frame_id = 'odom' 
+        odom_msg.child_frame_id = 'base_link'
+        if self.pose is not None:
+            odom_msg.pose.pose.position.x = self.pose.x - 5.544
+            odom_msg.pose.pose.position.y = self.pose.y - 5.544
+            odom_msg.pose.pose.position.y - self.disp
+        self._odom.publish(odom_msg)
         
     def publish_joints(self):
         joint_msg = JointState()
