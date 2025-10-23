@@ -4,6 +4,8 @@ import math
 
 from geometry_msgs.msg import Quaternion, TransformStamped
 
+import numpy as np
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile
@@ -34,7 +36,6 @@ class BrickState(Enum):
     each iteration
     """
 
-    NONEXIST = auto()
     STATIC = auto()
     SLIDING = auto()
     DROPPING = auto()
@@ -93,8 +94,11 @@ class Arena(Node):
         self.timer = self.create_timer(1 / self.freq, self.timer_callback)
 
         # Establish variables
-        self.brick_state = BrickState.NONEXIST
-        self.world = None
+        self.brick_state = BrickState.STATIC
+        self.world = physics.World(
+            np.array([5.544, 5.544, 10.0]), self.gravity,
+            self.wheel_radius, 1 / self.freq
+        )
         self.publish_walls()
         self.brick_off_x = 0
         self.brick_off_y = 0
@@ -139,11 +143,11 @@ class Arena(Node):
         friction
         """
         if self.brick_state == BrickState.STATIC:
-            self._logger.info('Static Timer Callback')
+            self._logger.debug('Static Timer Callback')
             self.broadcast_brick()
             self.pub_brick_marker()
         elif self.brick_state == BrickState.DROPPING:
-            self._logger.info('Dropping Timer Callback')
+            self._logger.debug('Dropping Timer Callback')
             self.world.drop()
             # Get Brick location
             self.broadcast_brick()
@@ -153,12 +157,11 @@ class Arena(Node):
             # Establish TF tree listener
             x = self.pose.x
             y = self.pose.y
-            # self.get_logger().info(f'Listening: {x}, {y}')
             if (
                 get_distance([x, y], brick) < self.platform_rad
                 and (brick[2] - 0.25) <= self.platform_height
             ):
-                self._logger.info('Hit Platform')
+                self._logger.debug('Hit Platform')
                 self.brick_state = BrickState.CAUGHT
                 msg = Bool()
                 msg.data = True
@@ -166,11 +169,11 @@ class Arena(Node):
                 self.brick_off_x = x - brick[0]
                 self.brick_off_y = y - brick[1]
             elif (brick[2] - 0.25) <= 0.0:
-                self._logger.info('Hit Floor')
+                self._logger.debug('Hit Floor')
                 self.brick_state = BrickState.STATIC
 
         elif self.brick_state == BrickState.CAUGHT:
-            self._logger.info('Caught Timer Callback')
+            self._logger.debug('Caught Timer Callback')
             self.broadcast_brick()
             t = self.tf_buffer.lookup_transform(
                 'odom', 'base_link', rclpy.time.Time()
@@ -182,7 +185,7 @@ class Arena(Node):
             self.broadcast_brick()
             self.pub_brick_marker()
         elif self.brick_state == BrickState.SLIDING:
-            self._logger.info('Sliding Timer Callback')
+            self._logger.debug('Sliding Timer Callback')
             self.world.tilt(self.platform_tilt)
             self.broadcast_brick()
             self.pub_brick_marker()
@@ -290,6 +293,10 @@ class Arena(Node):
         self.brick_marker.pose.position.x = 0.0
         self.brick_marker.pose.position.y = 0.0
         self.brick_marker.pose.position.z = 0.0
+        self.brick_marker.color.r = 1.0
+        self.brick_marker.color.g = 1.0
+        self.brick_marker.color.b = 0.0
+        self.brick_marker.color.a = 1.0
         self.brick_pub.publish(self.brick_marker)
 
     def vel_callback(self, pose):
@@ -318,7 +325,7 @@ class Arena(Node):
         Empty
 
         """
-        self._logger.info('Dropping')
+        self._logger.debug('Dropping')
         self.brick_state = BrickState.DROPPING
         msg = Bool()
         msg.data = True

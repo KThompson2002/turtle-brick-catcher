@@ -131,7 +131,7 @@ class TurtleRobot(Node):
         )
         # Create Publishers
         self._pub = self.create_publisher(
-            Twist, 'turtle1/cmd_vel', qos_profile
+            Twist, 'cmd_vel', qos_profile
         )
         self._joint = self.create_publisher(
             JointState, '/joint_states', qos_profile

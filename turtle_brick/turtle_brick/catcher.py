@@ -160,6 +160,10 @@ class Catcher(Node):
             mark.pose.position.x = 0.0
             mark.pose.position.y = 0.0
             mark.pose.position.z = 10.0
+            mark.color.r = 1.0
+            mark.color.g = 1.0
+            mark.color.b = 1.0
+            mark.color.a = 1.0
             mark.scale.z = 2.0
             self.pub.publish(mark)
 

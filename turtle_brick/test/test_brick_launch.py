@@ -24,6 +24,9 @@ def generate_test_description():
     node = Node(
         package='turtle_brick',
         executable='turtle_robot',
+        remappings=[
+            ('/cmd_vel', '/turtle1/cmd_vel')
+        ]
     )
     # Here is a dictionary of additional arguments to pass to test functions
     # You could, for example, store the Node Action
