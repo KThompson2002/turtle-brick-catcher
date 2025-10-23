@@ -40,6 +40,7 @@ def generate_launch_description():
                     }
                 ],
             ),
+            # Inline Citation [#5] start:
             Node(
                 package='joint_state_publisher_gui',
                 executable='joint_state_publisher_gui',
@@ -54,6 +55,7 @@ def generate_launch_description():
                     PythonExpression(["'", use_jsp, "' == 'jsp'"])
                 ),
             ),
+            # Inline Citation end
             Node(
                 package='rviz2',
                 executable='rviz2',

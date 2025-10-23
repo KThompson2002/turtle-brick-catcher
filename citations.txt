@@ -1,2 +1,6 @@
-[1] Worked With: Longzhang Zhu, Theodore Coulson, Nolan Knight, Greg Aiosa, Jyothi Swaroop Kasina, 
-[2] URDF Video
+[1] Worked With: Longzhang Zhu, Theodore Coulson, Nolan Knight, Greg Aiosa, Jyothi Swaroop Kasina, Ben Benyamin, Kyuwon Weon, Amber Handal
+[2] Arcticulated Robotics, "How do we describe a robot? With URDF! | Getting Ready to build Robots with ROS #7," Youtube, Oct. 25, 2021. [Online video, 15:17-21:06]. Available: https://youtu.be/D7ISrmszozk?si=AU71Y_3B6b9R0K4a [Accessed: Oct. 8, 2025]
+[3] Gemini 2.5 Pro. Google. Used on Oct 15th, 2025, Transcript: https://gemini.google.com/share/409df578cf05
+[3] Chatgpt 4.0. Open AI. Used on: Oct 18th, 2025, Transcript: https://chatgpt.com/share/68fa6f1a-90ec-8008-9ee1-43f854351b1a
+[4] Chatgpt 4.0. Open AI. Used on: Oct 22nd, 2025, Transcript: https://chatgpt.com/share/68fa709f-bb84-8008-9a60-9efbcce5506a
+[5] Gemini 2.5 Pro. Google. Used on: Oct 23rd, 2025, Transcript: https://gemini.google.com/share/7e8bef5359c5
