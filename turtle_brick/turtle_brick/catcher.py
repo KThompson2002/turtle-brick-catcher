@@ -1,7 +1,6 @@
 """Catcher Node."""
-
+from enum import auto, Enum
 import math
-from enum import Enum, auto
 
 from geometry_msgs.msg import PoseStamped
 
@@ -19,7 +18,8 @@ from visualization_msgs.msg import Marker
 
 
 class BrickState(Enum):
-    """Current state of the system.
+    """
+    Current state of the system.
 
     Determines what the main timer function should be doing on each iteration
     """
@@ -112,7 +112,8 @@ class Catcher(Node):
     #     self.world.tilt()
 
     def drop_callback(self, msg):
-        """Responds to the drop service in arena.
+        """
+        Responds to the drop service in arena.
 
         Calculates if the turtle-robot can arrive at the brick
         when bounded by the maximum velocity
@@ -163,7 +164,8 @@ class Catcher(Node):
             self.pub.publish(mark)
 
     def arrive_callback(self, msg):
-        """Responds to turtle_bot arriving at a goal.
+        """
+        Responds to turtle_bot arriving at a goal.
 
         If the robot is carrying the brick, it drops it
         If the robot is not it returns to it's drop off point
@@ -201,7 +203,8 @@ class Catcher(Node):
 
 
 def get_distance(point1, point2):
-    """Calculate straight line distance between two poses.
+    """
+    Calculate straight line distance between two poses.
 
     point1 - initial point
     point2 - end point

@@ -1,6 +1,8 @@
-from setuptools import find_packages, setup
-import os
+"""Setup file."""
 from glob import glob
+import os
+
+from setuptools import find_packages, setup
 
 package_name = 'turtle_brick'
 
@@ -20,7 +22,7 @@ setup(
     zip_safe=True,
     maintainer='KThompson2002',
     maintainer_email='kylezthompson@gmail.com',
-    description='TODO: Package description',
+    description='Turtle_brick_catcher',
     license='MIT',
     tests_require=['pytest'],
     entry_points={

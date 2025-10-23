@@ -3,9 +3,9 @@
 <package format="3">
   <name>turtle_brick_interfaces</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Turtle_brick interfaces</description>
   <maintainer email="kylezthompson@gmail.com">KThompson2002</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

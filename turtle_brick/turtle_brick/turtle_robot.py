@@ -1,6 +1,6 @@
 """Turtle robot node."""
+from enum import auto, Enum
 import math
-from enum import Enum, auto
 
 from geometry_msgs.msg import PoseStamped, Quaternion, TransformStamped, Twist
 
@@ -25,7 +25,8 @@ from turtlesim_msgs.msg import Pose
 
 
 class State(Enum):
-    """Current state of the system.
+    """
+    Current state of the system.
 
     Determines what the main timer function should be doing on each iteration
     """
@@ -54,7 +55,8 @@ def quatToMsg(quat):
 
 
 class TurtleRobot(Node):
-    """The turtle robot node.
+    """
+    The turtle robot node.
 
     Controls movement and visual representation
     """
@@ -73,7 +75,7 @@ class TurtleRobot(Node):
 
         # joint_state = JointState()
         # Declare parameters
-        self.declare_parameter('frequency', 200.0)
+        self.declare_parameter('frequency', 100.0)
         self.declare_parameter('platform_height', 9.0)
         self.declare_parameter('wheel_radius', 2.0)
         self.declare_parameter('max_velocity', 4.0)
@@ -128,7 +130,9 @@ class TurtleRobot(Node):
             Tilt, '/tilt', self.tilt_callback, qos_profile
         )
         # Create Publishers
-        self._pub = self.create_publisher(Twist, '/cmd_vel', qos_profile)
+        self._pub = self.create_publisher(
+            Twist, 'turtle1/cmd_vel', qos_profile
+        )
         self._joint = self.create_publisher(
             JointState, '/joint_states', qos_profile
         )
@@ -146,7 +150,8 @@ class TurtleRobot(Node):
         self.broadcaster = TransformBroadcaster(self)
 
     def timer_callback(self):
-        """Timer Callback completes state behavior.
+        """
+        Timer Callback completes state behavior.
 
         - Start: Establish World and Odom Frame
         - Moving: Move to current waypoint
@@ -169,6 +174,7 @@ class TurtleRobot(Node):
             joint_msg.name = ['platform_joint', 'stem_joint', 'wheel_joint']
             joint_msg.position = [0.0, 0.0, 0.0]
             self._joint.publish(joint_msg)
+            self._pub.publish(Twist())
 
         elif self.state == State.MOVING and self.curr_waypoint is not None:
             twist = self.turtle_twist()
@@ -212,7 +218,8 @@ class TurtleRobot(Node):
         self.platform_tilt = tilt.tilt_angle
 
     def turtle_twist(self):
-        """Create a twist.
+        """
+        Create a twist.
 
         Twist moves the turtle proportionally towards the next waypoint
         """
@@ -235,7 +242,8 @@ class TurtleRobot(Node):
             return vel_msg
 
     def translate_robot(self):
-        """Move the Base_link Frame.
+        """
+        Move the Base_link Frame.
 
         Function mirros the base_link with turtle pose
         Publishes information on the Odometry Topic
@@ -269,7 +277,8 @@ class TurtleRobot(Node):
         self._odom.publish(odom_msg)
 
     def publish_joints(self):
-        """Publish joint states.
+        """
+        Publish joint states.
 
         platform_joint: represents the tilt
         stem_joint: turn the wheel in movement direction
@@ -298,7 +307,8 @@ class TurtleRobot(Node):
 
 
 def get_distance(point1, point2):
-    """Calculate straight line distance between two poses.
+    """
+    Calculate straight line distance between two poses.
 
     point1 - initial point
     point2 - end point

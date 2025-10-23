@@ -1,7 +1,6 @@
 """Establish arena node."""
+from enum import auto, Enum
 import math
-from enum import Enum, auto
-
 
 from geometry_msgs.msg import Quaternion, TransformStamped
 
@@ -28,7 +27,8 @@ from visualization_msgs.msg import Marker
 
 
 class BrickState(Enum):
-    """Current state of the system.
+    """
+    Current state of the system.
 
     Determines what the main timer function should be doing on
     each iteration
@@ -129,7 +129,8 @@ class Arena(Node):
         self.listener = TransformListener(self.tf_buffer, self)
 
     def timer_callback(self):
-        """Timer dictates action in each state.
+        """
+        Timer dictates action in each state.
 
         Static: Brick stays still
         Dropping: Brick accelerates with gravity
@@ -206,15 +207,19 @@ class Arena(Node):
         self.brick_state = BrickState.SLIDING
 
     def place_callback(self, request, response):
-        """Call function for the custom Place service.
+        """
+        Call function for the custom Place service.
 
-        Moves brick to a specificied locations
+        Moves brick to a specified locations
 
         Args:
-          request: Geometry_msgs/Point place
-          response: Empty
+            request: Geometry_msgs/Point place
+            response: Empty
 
-        Empty Return
+        Returns
+        -------
+        Empty
+
         """
         # Establish brick location
         x_loc = request.place.x
@@ -292,7 +297,8 @@ class Arena(Node):
         self.pose = pose
 
     def drop_callback(self, request, response):
-        """Call function for the drop service.
+        """
+        Call function for the drop service.
 
         Causes brick to start falling in gravity using specficied
         gravity acceleration
@@ -304,10 +310,13 @@ class Arena(Node):
             slide off the platform
 
         Args:
-          request: Empty
-          response: Empty
+            request: Empty
+            response: Empty
 
-        Empty Return
+        Returns
+        -------
+        Empty
+
         """
         self._logger.info('Dropping')
         self.brick_state = BrickState.DROPPING
@@ -396,7 +405,8 @@ class Arena(Node):
 
 
 def get_distance(point1, point2):
-    """Calculate straight line distance between two poses.
+    """
+    Calculate straight line distance between two poses.
 
     point1 - initial point
     point2 - end point
@@ -407,7 +417,8 @@ def get_distance(point1, point2):
 
 
 def get_distance_3d(point1, point2):
-    """Calculate straight line distance between two poses.
+    """
+    Calculate straight line distance between two poses.
 
     point1 - initial point
     point2 - end point
@@ -420,7 +431,8 @@ def get_distance_3d(point1, point2):
 
 
 def quatToMsg(quat):
-    """Convert a four-element sequence to a geometry_msgs/msg/Quaternion.
+    """
+    Convert a four-element sequence to a geometry_msgs/msg/Quaternion.
 
     Parameters
     ----------

@@ -1,12 +1,14 @@
-"""Run the Turtle Robot"""
+"""Run the Turtle Robot."""
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.substitutions import PathJoinSubstitution
+
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+
 def generate_launch_description():
-    
+    """Generate Launch File to run turtlebot."""
     return LaunchDescription([
         IncludeLaunchDescription(
             PathJoinSubstitution([
@@ -19,28 +21,28 @@ def generate_launch_description():
             }.items()
         ),
         Node(
-            package="turtlesim",
-            executable="turtlesim_node",
+            package='turtlesim',
+            executable='turtlesim_node',
             parameters=[
-                {"holonomic": True}
+                {'holonomic': True}
             ]
         ),
         Node(
-            package="turtle_brick",
-            executable="turtle_robot",
+            package='turtle_brick',
+            executable='turtle_robot',
             parameters=[
                 PathJoinSubstitution([
-                    FindPackageShare("turtle_brick"),
-                    "config",
-                    "turtle.yaml"
+                    FindPackageShare('turtle_brick'),
+                    'config',
+                    'turtle.yaml'
                 ]),
-                {"frequency": 100.0}
+                {'frequency': 100.0}
             ],
             remappings=[
-                ("/cmd_vel", "/turtle1/cmd_vel"),
-                ("/pose", "/turtle1/pose")
-                
+                ('/cmd_vel', '/turtle1/cmd_vel'),
+                ('/pose', '/turtle1/pose')
+
             ]
         ),
-        
+
     ])
