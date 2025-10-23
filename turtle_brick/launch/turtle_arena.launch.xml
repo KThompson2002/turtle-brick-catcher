@@ -1,0 +1,13 @@
+<launch>
+    <node pkg="turtle_brick" exec="catcher" name="catcher">
+        <param from="$(find-pkg-share turtle_brick)/config/turtle.yaml" />
+    </node>
+
+    <node pkg="turtle_brick" exec="arena" name="arena">
+        <param name="frequency" value="250.0"/>
+        <param from="$(find-pkg-share turtle_brick)/config/turtle.yaml" />
+        <remap from="pose" to="turtle1/pose"/>
+    </node>
+
+     <include file="$(find-pkg-share turtle_brick)/launch/run_turtle.launch.xml"/>
+</launch>

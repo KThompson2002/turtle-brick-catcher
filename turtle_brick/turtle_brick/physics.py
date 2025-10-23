@@ -45,7 +45,7 @@ class World:
         Update the brick's location by having it fall in gravity for one timestep
         """
         self.vel += self.gravity*self.dt
-        self.brick[2] -= self.vel*self.dt 
+        self._brick[2] -= self.vel*self.dt 
         pass
     
     def tilt(self, angle):
@@ -56,5 +56,5 @@ class World:
         dy = s * np.cos(angle)
         dz = s * np.sin(angle)
         
-        self.brick[1] -= dy
-        self.brick[2] -= dz
+        self._brick[1] -= dy
+        self._brick[2] -= dz

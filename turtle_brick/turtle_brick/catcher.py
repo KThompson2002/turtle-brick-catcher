@@ -16,8 +16,8 @@ class BrickState(Enum):
     """ Current state of the system.
         Determines what the main timer function should be doing on each iteration
     """
-    STATIC = auto(),
-    DROPPING = auto(),
+    STATIC = auto()
+    DROPPING = auto()
     CARRYING = auto()
 
 
@@ -30,10 +30,10 @@ class Catcher(Node):
         
         
         # Declare Parameters
-        self.declare_parameter("frequency", 90.0)
+        self.declare_parameter("frequency", 250.0)
         self.declare_parameter("platform_height", 9.0)
         self.declare_parameter("wheel_radius", 2.0)
-        self.declare_parameter("max_velocity", 3.0)
+        self.declare_parameter("max_velocity", 4.0)
         self.declare_parameter("gravity_accel", 9.81)
         self.declare_parameter("platform_radius", 2.0)
 
@@ -50,8 +50,8 @@ class Catcher(Node):
         self._goal = self.create_publisher(PoseStamped, '/goal_pose', qos_profile)        
         # Create subscribers for arena node
         self.create_subscription(Bool, 'drop_event', self.drop_callback, qos_profile)
-        # self.create_subscription(Bool, 'caught_event', self.caught_callback, qos_profile)
         self.create_subscription(Bool, '/arrive', self.arrive_callback, qos_profile)
+        self.create_subscription(Bool, 'caught_event', self.caught_callback, qos_profile)
         
         # Create publisher for turtle-robot node
         self._tilt = self.create_publisher(Tilt, '/tilt', qos_profile)
@@ -66,8 +66,8 @@ class Catcher(Node):
         # Create Marker Publisher
         self.pub = self.create_publisher(Marker, '/catcher', markerQoS)
         
-        # Create timer
-    #     self.timer = self.create_timer(1/self.freq, self.timer_callback)
+        # Create Initial Variables:
+        self._goal_msg = PoseStamped()
     
     # def timer_callback(self):
     #     if self.brick_state == BrickState.CARRYING:
@@ -78,7 +78,9 @@ class Catcher(Node):
         
     def drop_callback(self, msg):
         self.brick_state = BrickState.DROPPING
-        
+        # tilt_msg = Tilt()
+        # tilt_msg.tilt_angle = 0.0
+        # self._tilt.publish(tilt_msg)
         # Look up base_link location
         t = self.tf_buffer.lookup_transform(
             'odom',
@@ -145,13 +147,14 @@ class Catcher(Node):
             goal_msg = PoseStamped()
             goal_msg.pose.position.x = 5.544
             if msg.data:
-                goal_msg.pose.position.y = 5.544 - self.platform_rad
+                goal_msg.pose.position.y = 5.544 - (self.platform_rad * math.cos(math.pi/6) + 0.5 * math.cos(math.pi/6))
             else:
-                goal_msg.pose.position.y = 5.544 + self.platform_rad
-            self._goal.publish(goal_msg)
+                goal_msg.pose.position.y = 5.544 + (self.platform_rad * math.cos(math.pi/6) + 0.5 * math.cos(math.pi/6))
+            self._goal_msg = goal_msg
             
-            self.brick_state = BrickState.CARRYING
-            
+    def caught_callback(self, msg):
+        self.brick_state = BrickState.CARRYING
+        self._goal.publish(self._goal_msg)
         
         
 def get_distance(point1, point2):

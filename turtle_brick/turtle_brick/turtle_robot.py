@@ -4,7 +4,7 @@ import math
 
 from rclpy.node import Node
 # from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+from rclpy.qos import QoSProfile
 
 from turtlesim_msgs.msg import Pose
 from nav_msgs.msg import Odometry
@@ -24,8 +24,8 @@ class State(Enum):
     """ Current state of the system.
         Determines what the main timer function should be doing on each iteration
     """
-    START = auto(),
-    MOVING = auto(),
+    START = auto()
+    MOVING = auto()
     STOPPED = auto()
 
 
@@ -59,17 +59,17 @@ class TurtleRobot(Node):
         
         #joint_state = JointState()
         # Declare parameters
-        self.declare_parameter("frequency", 90.0)
+        self.declare_parameter("frequency", 200.0)
         self.declare_parameter("platform_height", 9.0)
         self.declare_parameter("wheel_radius", 2.0)
-        self.declare_parameter("max_velocity", 3.0)
+        self.declare_parameter("max_velocity", 4.0)
         self.declare_parameter("gravity_accel", 9.81)
         
         # Create Parameters
         self.freq = self.get_parameter("frequency").get_parameter_value().double_value
         self.platform_height = self.get_parameter("platform_height").get_parameter_value().double_value
         self.wheel_radius = self.get_parameter("wheel_radius").get_parameter_value().double_value
-        self.max_velocity = self.get_parameter("max_velocity").get_parameter_value().double_value
+        self.max_vel = self.get_parameter("max_velocity").get_parameter_value().double_value
         self.gravity = self.get_parameter("gravity_accel").get_parameter_value().double_value
         self.disp = self.wheel_radius*2 + (0.5+0.2)
         
@@ -134,7 +134,7 @@ class TurtleRobot(Node):
             self._pub.publish(twist)
             self.translate_robot()
             self.publish_joints()
-            if get_distance([self.curr_waypoint.x, self.curr_waypoint.y], [self.pose.x, self.pose.y]) < 0.01:
+            if get_distance([self.curr_waypoint.x, self.curr_waypoint.y], [self.pose.x, self.pose.y]) < 0.05:
                 arrive_msg = Bool()
                 if self.pose.y < 5.544:
                     arrive_msg.data = True
@@ -146,7 +146,8 @@ class TurtleRobot(Node):
         else:
             self.translate_robot()
             self.publish_joints()
-        
+            twist = self.turtle_twist()
+            self._pub.publish(twist)
         
     
     def vel_callback(self, pose):
@@ -168,14 +169,18 @@ class TurtleRobot(Node):
             vel_msg = Twist()
             dx = self.curr_waypoint.x - self.pose.x
             dy = self.curr_waypoint.y - self.pose.y
-            x_vel = dx * self._velocity
-            y_vel = dy * self._velocity
+            norm = math.sqrt(dx**2 + dy**2)
+            x_vel = self.max_vel * (dx / norm)
+            y_vel = self.max_vel * (dy / norm)
             vel_msg.linear.x = x_vel
             vel_msg.linear.y = y_vel
             self.curr_vel = vel_msg
             return vel_msg
         else:
-            return Twist()
+            vel_msg = Twist()
+            vel_msg.linear.x = 0.0
+            vel_msg.linear.y = 0.0
+            return vel_msg
     
     def translate_robot(self):
         odom_trans = TransformStamped()
@@ -204,7 +209,7 @@ class TurtleRobot(Node):
             xdot = self.curr_vel.linear.x
             ydot = self.curr_vel.linear.y
             if math.hypot(xdot, ydot) > 0:
-                self.stem_angle = math.atan2(xdot, ydot)
+                self.stem_angle = math.atan2(xdot, ydot) + (math.pi/2)
             
             ang_vel = math.sqrt(xdot**2 + ydot**2)/self.wheel_radius
             self.wheel_angle += ang_vel * (1/self.freq)

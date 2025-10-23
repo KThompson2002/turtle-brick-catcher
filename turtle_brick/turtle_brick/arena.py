@@ -3,19 +3,16 @@ import rclpy
 import math
 
 
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Quaternion
 # from interactive_markers.interactive_marker_server import (
 #     InteractiveMarker, InteractiveMarkerServer)
-
-import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy, QoSProfile
-from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 from visualization_msgs.msg import Marker
 
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
-from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
 
+from turtlesim_msgs.msg import Pose
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
 from turtle_brick_interfaces.srv import Place
@@ -23,15 +20,19 @@ from turtle_brick_interfaces.srv import Place
 from turtle_brick import physics
 from turtle_brick_interfaces.msg import Tilt
 
+from transforms3d.quaternions import axangle2quat
+
 class BrickState(Enum):
     """ Current state of the system.
         Determines what the main timer function should be doing on each iteration
     """
     NONEXIST = auto()
-    STATIC = auto(),
-    SLIDING = auto(),
-    DROPPING = auto(),
+    STATIC = auto()
+    SLIDING = auto()
+    DROPPING = auto()
     CAUGHT = auto()
+    
+    
 
 class Arena(Node):
     """
@@ -54,7 +55,7 @@ class Arena(Node):
         # Declare Parameters
         self.declare_parameter("platform_height", 5.0)
         self.declare_parameter("wheel_radius", 1.0)
-        self.declare_parameter("max_velocity", 1.5)
+        self.declare_parameter("max_velocity", 4.0)
         self.declare_parameter("gravity_accel", 9.81)
         self.declare_parameter("platform_radius", 2.0)
         
@@ -75,12 +76,14 @@ class Arena(Node):
         self.publish_walls()
         self.brick_off_x = 0
         self.brick_off_y = 0
+        self.pose = None
         # Instantiate Brick Marker
         self.brick_marker = Marker()
         
         # Create place service
-        self._brick = self.create_service(Place, "place", self.place_callback)
-        self._drop = self.create_service(Empty, "drop",  self.drop_callback)
+        self._brick = self.create_service(Place, "/place", self.place_callback)
+        self._drop = self.create_service(Empty, "/drop",  self.drop_callback)
+        self._vel = self.create_subscription(Pose, "/pose", self.vel_callback, qos_profile)
         
         # Create tilt subscriber
         self.platform_tilt = 0.0
@@ -89,7 +92,7 @@ class Arena(Node):
         
         # Create publisher for catcher Node
         self.drop_not = self.create_publisher(Bool, "drop_event", qos_profile)
-        # self.catch_not = self.create_publisher(Bool, "caught_event", qos_profile)
+        self.catch_not = self.create_publisher(Bool, "caught_event", qos_profile)
         
         # Create the broadcaster
         self.broadcaster = TransformBroadcaster(self)
@@ -101,33 +104,37 @@ class Arena(Node):
     
     def timer_callback(self):
         if self.brick_state == BrickState.STATIC:
+            self._logger.info("Static Timer Callback")
             self.broadcast_brick()
+            self.pub_brick_marker()
         elif self.brick_state == BrickState.DROPPING:
+            
+            self._logger.info("Dropping Timer Callback")
             self.world.drop()
+            # Get Brick location
             self.broadcast_brick()
             self.pub_brick_marker()
             
-            # Get Brick location
             brick = self.world._brick
-            
             # Establish TF tree listener
-            t = self.tf_buffer.lookup_transform(
-                'odom',
-                'base_link',
-                rclpy.time.Time())
-            x = t.transform.translation.x + 5.544
-            y = t.transform.translation.y + 5.544
+            x = self.pose.x
+            y = self.pose.y
             # self.get_logger().info(f"Listening: {x}, {y}")
-            if get_distance([x,y], brick) < self.platform_rad and brick[2] <= self.platform_height:
-                self.brick_state = BrickState.CAUGHT
-                # msg = Bool()
-                # msg.data = True
-                # self.catch_not.publish(msg)
+            if get_distance([x,y], brick) < self.platform_rad and (brick[2]-0.25) <= self.platform_height:
+                self._logger.info("Hit Platform")
+                self.brick_state = BrickState.CAUGHT  
+                msg = Bool()
+                msg.data = True
+                self.catch_not.publish(msg)
                 self.brick_off_x = x - brick[0]
                 self.brick_off_y = y - brick[1]
-            elif brick[2] <= 0.0:
+            elif (brick[2] - 0.25) <= 0.0:
+                self._logger.info("Hit Floor")
                 self.brick_state = BrickState.STATIC
+            
+            
         elif self.brick_state == BrickState.CAUGHT:
+            self._logger.info("Caught Timer Callback")
             self.broadcast_brick()
             t = self.tf_buffer.lookup_transform(
                 'odom',
@@ -140,6 +147,7 @@ class Arena(Node):
             self.broadcast_brick()
             self.pub_brick_marker()
         elif self.brick_state == BrickState.SLIDING:
+            self._logger.info("Sliding Timer Callback")
             self.world.tilt(self.platform_tilt)
             self.broadcast_brick()
             self.pub_brick_marker()
@@ -149,8 +157,10 @@ class Arena(Node):
                 rclpy.time.Time())
             x = t.transform.translation.x + 5.544
             y = t.transform.translation.y + 5.544
-            if get_distance([self.world._brick[0], self.world._brick[1]], [x, y]) > (self.platform_rad+0.5):
-                self.brick_state = BrickState.DROPPING
+            z = self.platform_height + 0.25
+            if get_distance_3d([self.world._brick[0], self.world._brick[1], self.world._brick[2]], [x, y, z]) > (self.platform_rad + .75):
+                self.brick_state = BrickState.STATIC
+                pass
             
     def tilt_callback(self, tilt):
         self.platform_tilt = tilt.tilt_angle
@@ -220,18 +230,23 @@ class Arena(Node):
         odom_trans.transform.translation.x = brick[0] - 5.544
         odom_trans.transform.translation.y = brick[1] - 5.544
         odom_trans.transform.translation.z = brick[2]
+        odom_trans.transform.rotation = quatToMsg(axangle2quat([1.0, 0, 0], self.platform_tilt))
         self.broadcaster.sendTransform(odom_trans)
     
     def pub_brick_marker(self):
-        self.brick_marker.header.frame_id = "brick"
+        self.brick_marker.header.frame_id = 'brick'
         self.brick_marker.header.stamp = self.get_clock().now().to_msg()
-        self.brick_marker.ns = "brick_marker"
+        self.brick_marker.ns = 'brick_marker'
         self.brick_marker.id = 1
         self.brick_marker.action = Marker.MODIFY
         self.brick_marker.pose.position.x = 0.0
         self.brick_marker.pose.position.y = 0.0
         self.brick_marker.pose.position.z = 0.0
         self.brick_pub.publish(self.brick_marker)
+    
+    def vel_callback(self, pose):
+        self.pose = pose
+        
     
     def drop_callback(self, request, response):
         """ Callback function for the drop service
@@ -249,6 +264,7 @@ class Arena(Node):
           
         Empty Return
         """
+        self._logger.info("Dropping")
         self.brick_state = BrickState.DROPPING
         msg = Bool()
         msg.data = True
@@ -336,13 +352,37 @@ class Arena(Node):
         
         
 def get_distance(point1, point2):
-        """ Calculates straight line distance between two poses
-        
-        point1 - initial point
-        point2 - end point
-        """
-        return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
-        
+    """ Calculates straight line distance between two poses
+    
+    point1 - initial point
+    point2 - end point
+    """
+    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+    
+def get_distance_3d(point1, point2):
+    """ Calculates straight line distance between two poses
+    
+    point1 - initial point
+    point2 - end point
+    """
+    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2 + (point1[2]  - point2[2])**2)
+    
+def quatToMsg(quat):
+    """
+    Convert a four-element sequence to a geometry_msgs/msg/Quaternion.
+
+    Parameters
+    ----------
+    quat : list
+         A four element sequence [w, x, y, z] representing a quaternion
+
+    Returns
+    -------
+    geometry_msgs.msg.Quaternion
+         The corresponding Quaternion message
+
+    """
+    return Quaternion(w=quat[0], x=quat[1], y=quat[2], z=quat[3])
         
 def main(args=None):
     
