@@ -1,3 +1,5 @@
+"""Physics calculations for the arena node."""
+
 import numpy as np
 
 
@@ -5,8 +7,7 @@ class World:
     """Keep track of the physics of the world."""
 
     def __init__(self, brick, gravity, radius, dt):
-        """
-        Initialize the world.
+        """Initialize the world.
 
         Args:
         brick - The (x,y,z) location of the brick
@@ -14,7 +15,6 @@ class World:
         radius - the radius of the platform
         dt - timestep in seconds of the physics simulation
         """
-        
         self._brick = brick
         self.gravity = gravity
         self.radius = radius
@@ -41,23 +41,28 @@ class World:
            location - the (x,y,z) location of the brick
         """
         self._brick = location.copy()
-        
+
     def drop(self):
+        """Update the brick's location.
+
+        Simulate falling in gravity by one timestep
         """
-        Update the brick's location by having it fall in gravity 
-        for one timestep
-        """
-        self.vel += self.gravity*self.dt
-        self._brick[2] -= self.vel*self.dt 
+        self.vel += self.gravity * self.dt
+        self._brick[2] -= self.vel * self.dt
         pass
-    
+
     def tilt(self, angle):
-        a = self.gravity*np.sin(angle)
-        
+        """Update the brick's location.
+
+        Simulate falling in gravity by one timestep
+        - Adjust by the given angle fallen
+        """
+        a = self.gravity * np.sin(angle)
+
         self.vel += a * self.dt
         s = self.vel * self.dt
         dy = s * np.cos(angle)
         dz = s * np.sin(angle)
-        
+
         self._brick[1] -= dy
         self._brick[2] -= dz
