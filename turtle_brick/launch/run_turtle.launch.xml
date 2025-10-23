@@ -4,11 +4,13 @@
     </node>
 
     <node pkg="turtle_brick" exec="turtle_robot" name="turtle_robot">
-        <param name="frequency" value="200.0"/>
+        <param name="frequency" value="100.0"/>
         <param from="$(find-pkg-share turtle_brick)/config/turtle.yaml" />
         <remap from="cmd_vel" to="turtle1/cmd_vel"/>
         <remap from="pose" to="turtle1/pose"/>
     </node>
 
-     <include file="$(find-pkg-share turtle_brick)/launch/show_turtle.launch.xml"/>
+    <include file="$(find-pkg-share turtle_brick)/launch/show_turtle.launch.xml">
+         <arg name="use_jsp" value="jsp"/>
+    </include>
 </launch>

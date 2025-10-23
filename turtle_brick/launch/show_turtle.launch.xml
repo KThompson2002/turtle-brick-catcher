@@ -1,5 +1,5 @@
 <launch>
-
+  <arg name="use_jsp" default="gui"/>
   <!-- This robot state publisher is included if the specified robot is not slide -->
   <node pkg="robot_state_publisher" exec="robot_state_publisher">
     <!-- load the urdf into the parameter server -->
@@ -7,7 +7,8 @@
     <param name="robot_description" value="$(command '$(exec-in-pkg xacro xacro) $(find-pkg-share turtle_brick)/urdf/turtle_bot.urdf.xacro')" />
   </node>
 
-  <!-- <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui"/> -->
+  <node pkg="joint_state_publisher_gui" exec="joint_state_publisher_gui" if="$(eval '\'$(var use_jsp)\'==\'gui\'')" />
+  <node pkg="joint_state_publisher" exec="joint_state_publisher" if="$(eval '\'$(var use_jsp)\'== \'jsp\'')" />
 
   <!-- rviz will enable us to see the robot -->
   <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share turtle_brick)/config/view_robot.rviz"/>
