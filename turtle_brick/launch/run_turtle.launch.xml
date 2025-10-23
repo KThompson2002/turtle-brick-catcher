@@ -11,6 +11,6 @@
     </node>
 
     <include file="$(find-pkg-share turtle_brick)/launch/show_turtle.launch.xml">
-         <arg name="use_jsp" value="jsp"/>
+         <arg name="use_jsp" value="'jsp'"/>
     </include>
 </launch>

@@ -105,12 +105,6 @@ class Catcher(Node):
         # Create Initial Variables:
         self._goal_msg = PoseStamped()
 
-    # def timer_callback(self):
-    #     if self.brick_state == BrickState.CARRYING:
-    # Find brick location
-    # if self.platform_tilt > 0.0:
-    #     self.world.tilt()
-
     def drop_callback(self, msg):
         """
         Responds to the drop service in arena.
