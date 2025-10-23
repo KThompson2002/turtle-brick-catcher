@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class World:
     """Keep track of the physics of the world."""
 
@@ -40,9 +41,11 @@ class World:
            location - the (x,y,z) location of the brick
         """
         self._brick = location.copy()
+        
     def drop(self):
         """
-        Update the brick's location by having it fall in gravity for one timestep
+        Update the brick's location by having it fall in gravity 
+        for one timestep
         """
         self.vel += self.gravity*self.dt
         self._brick[2] -= self.vel*self.dt 

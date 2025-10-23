@@ -39,6 +39,7 @@ def generate_launch_description():
             remappings=[
                 ("/cmd_vel", "/turtle1/cmd_vel"),
                 ("/pose", "/turtle1/pose")
+                
             ]
         ),
         

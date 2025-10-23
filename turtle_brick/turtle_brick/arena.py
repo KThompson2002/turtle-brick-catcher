@@ -24,7 +24,8 @@ from transforms3d.quaternions import axangle2quat
 
 class BrickState(Enum):
     """ Current state of the system.
-        Determines what the main timer function should be doing on each iteration
+        Determines what the main timer function should be doing on
+        each iteration
     """
     NONEXIST = auto()
     STATIC = auto()

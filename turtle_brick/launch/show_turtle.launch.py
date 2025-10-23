@@ -1,12 +1,20 @@
-# """Display the turtlebot in rviz."""
+"""Display the turtlebot in rviz."""
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, PythonExpression
+from launch.substitutions import (
+    Command, 
+    LaunchConfiguration, 
+    PathJoinSubstitution, 
+    PythonExpression
+)
+
 from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
+    """Generate Launch File to display turtlebot"""
+    
     use_jsp = LaunchConfiguration('use_jsp')
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -28,13 +36,13 @@ def generate_launch_description():
             }]
         ),
         Node(
-            package="joint_state_publisher_gui",
-            executable="joint_state_publisher_gui",
+            package='joint_state_publisher_gui',
+            executable='joint_state_publisher_gui',
             condition=IfCondition(PythonExpression(["'", use_jsp, "' == 'gui'"]))
         ),
         Node(
-            package="joint_state_publisher",
-            executable="joint_state_publisher",
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
             condition=IfCondition(PythonExpression(["'", use_jsp, "' == 'jsp'"]))
         ),
         Node(
