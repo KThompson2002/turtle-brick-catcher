@@ -159,6 +159,7 @@ class Catcher(Node):
             mark.color.b = 1.0
             mark.color.a = 1.0
             mark.scale.z = 2.0
+            mark.lifetime = rclpy.duration.Duration(seconds=3.0).to_msg()
             self.pub.publish(mark)
 
     def arrive_callback(self, msg):

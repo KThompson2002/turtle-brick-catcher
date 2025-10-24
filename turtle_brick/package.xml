@@ -7,19 +7,11 @@
   <maintainer email="kylezthompson@gmail.com">KThompson2002</maintainer>
   <license>MIT</license>
 
-  <exec_depend>launch<exec_depend>
-  <exec_depend>launch_ros</exec_depend>
-  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>rclpy</exec_depend>
-  <exec_depend>turtlesim</exec_depend>
-  <exec_depend>turtlesim_msgs</exec_depend>
+  <exec_depend>turtle_sim</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>tf2_ros</exec_depend>
   <exec_depend>python3-transforms3d</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>joint_state_publisher</exec_depend>
-  <exec_depend>joint_state_publisher_gui</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>xacro</exec_depend>
 
@@ -28,7 +20,6 @@
   <test_depend>ament_pep257</test_depend>
   <test_depend>ament_xmllint</test_depend>
   <test_depend>python3-pytest</test_depend>
-  <test_depend>launch_testing_ros</test_depend>
 
   <export>
     <build_type>ament_python</build_type>
