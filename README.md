@@ -12,4 +12,4 @@ The turtle_brick package describes a turtle_robot which mirrors the movement of 
 
 4. Here is a video of the turtle when the brick cannot be caught
 
-   [turtle_brick_no_catch.webm](https://github.com/user-attachments/assets/80823ecf-f3f7-4b03-a468-a73298daedaf)
+   [turtle_brick_catch_fail.webm](https://github.com/user-attachments/assets/f0503565-8e6a-4799-af39-b58fe58a1ad9)
