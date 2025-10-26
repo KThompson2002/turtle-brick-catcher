@@ -17,7 +17,7 @@ def generate_launch_description():
                 'show_turtle.launch.py'
             ]),
             launch_arguments={
-                'use_jsp': 'jsp'
+                'use_jsp': 'None'
             }.items()
         ),
         Node(
