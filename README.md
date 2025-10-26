@@ -8,7 +8,7 @@ The turtle_brick package describes a turtle_robot which mirrors the movement of 
 2. Use `ros2 service call drop std_srvs/srv/Empty` to drop a brick
 3. Here is a video of the turtle when the brick is within catching range
   
-   [turtle_brick_catch.webm](https://github.com/user-attachments/assets/269a5ab0-4879-4a3b-a53b-6c43c1820c1b)
+   [turtle_brick_catch_2.webm](https://github.com/user-attachments/assets/57b4f3fb-c5be-4ffc-b994-6d1761921aba)
 
 4. Here is a video of the turtle when the brick cannot be caught
 
